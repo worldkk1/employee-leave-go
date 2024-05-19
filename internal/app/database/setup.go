@@ -1,6 +1,7 @@
 package database
 
 import (
+	"github.com/worldkk1/employee-leave-go/internal/app/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -12,6 +13,13 @@ func SetupDB() *gorm.DB {
 	if err != nil {
 		panic("failed to connect database")
 	}
+
+	db.AutoMigrate(
+		&models.User{},
+		&models.LeaveType{},
+		&models.UserLeave{},
+		&models.UserLeaveRecord{},
+	)
 
 	return db
 }
