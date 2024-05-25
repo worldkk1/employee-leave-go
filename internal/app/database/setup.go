@@ -11,7 +11,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupDB() *gorm.DB {
+var DB *gorm.DB
+
+func SetupDB() {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("failed to load .env file")
@@ -42,5 +44,5 @@ func SetupDB() *gorm.DB {
 		&models.UserLeaveRecord{},
 	)
 
-	return db
+	DB = db
 }
