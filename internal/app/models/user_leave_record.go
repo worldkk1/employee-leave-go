@@ -18,6 +18,6 @@ type UserLeaveRecord struct {
 	Reason        *string
 	AttachmentURL *string
 	ApproveBy     *string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	CreatedAt     time.Time `gorm:"default:now()"`
+	UpdatedAt     time.Time `gorm:"default:now()"`
 }

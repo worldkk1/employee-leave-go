@@ -7,4 +7,5 @@ func SetupRouter(router *gin.RouterGroup) {
 
 	users.POST("/", CreateUser)
 	users.PATCH("/:id", EditUser)
+	users.GET("/:id", GetUserDetail)
 }

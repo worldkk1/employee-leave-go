@@ -13,6 +13,7 @@ type LeaveType struct {
 	NeedApproval    bool      `gorm:"default:false"`
 	TotalLeaves     int       `gorm:"not null"`
 	IsRatioAllocate bool      `gorm:"default:false"`
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	IsCarryOver     bool      `gorm:"default:false"`
+	CreatedAt       time.Time `gorm:"default:now()"`
+	UpdatedAt       time.Time `gorm:"default:now()"`
 }

@@ -16,6 +16,6 @@ type UserLeave struct {
 	Used         int       `gorm:"not null"`
 	StartDate    time.Time
 	EndDate      time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	CreatedAt    time.Time `gorm:"default:now()"`
+	UpdatedAt    time.Time `gorm:"default:now()"`
 }
