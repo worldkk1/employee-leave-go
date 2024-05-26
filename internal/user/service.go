@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/worldkk1/employee-leave-go/internal/app/database"
 	"github.com/worldkk1/employee-leave-go/internal/app/models"
+	userLeave "github.com/worldkk1/employee-leave-go/internal/user-leave"
 )
 
 type CreateUserInput struct {
@@ -40,7 +41,13 @@ func CreateUser(c *gin.Context) {
 		Email:    input.Email,
 		Password: "",
 	}
-	database.DB.Create(&user)
+	err := database.DB.Create(&user).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	userLeave.AllocateLeaves(user.Id)
 
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
