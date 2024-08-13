@@ -29,6 +29,20 @@ type RequestLeaveResponse struct {
 	Used      int       `json:"used"`
 }
 
+type LeaveDetailResponse struct {
+	Id            uuid.UUID `json:"id"`
+	UserId        uuid.UUID `json:"userId"`
+	LeaveTypesId  uuid.UUID `json:"leaveTypesId"`
+	StartDate     time.Time `json:"startDate"`
+	EndDate       time.Time `json:"endDate"`
+	TotalLeaveDay int       `json:"totalLeaveDay,omitempty"`
+	Reason        *string   `json:"reason"`
+	AttachmentURL *string   `json:"attachmentURL"`
+	ApproveBy     *string   `json:"approveBy"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
 func RequestLeave(c *gin.Context) {
 	var input RequestLeaveInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -91,6 +105,27 @@ func RequestLeave(c *gin.Context) {
 		UserId:    input.UserId,
 		Remaining: userLeave.Remaining,
 		Used:      userLeave.Used,
+	}})
+}
+
+func GetLeaveDetail(c *gin.Context) {
+	var leaveRecord models.UserLeaveRecord
+	if err := database.DB.Where("id = ?", c.Param("leaveRecordId")).First(&leaveRecord).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": LeaveDetailResponse{
+		Id:            leaveRecord.Id,
+		UserId:        leaveRecord.UserId,
+		LeaveTypesId:  leaveRecord.LeaveTypesId,
+		StartDate:     leaveRecord.StartDate,
+		EndDate:       leaveRecord.EndDate,
+		Reason:        leaveRecord.Reason,
+		AttachmentURL: leaveRecord.AttachmentURL,
+		ApproveBy:     leaveRecord.ApproveBy,
+		CreatedAt:     leaveRecord.CreatedAt,
+		UpdatedAt:     leaveRecord.UpdatedAt,
 	}})
 }
 
