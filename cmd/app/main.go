@@ -5,6 +5,7 @@ import (
 	"github.com/worldkk1/employee-leave-go/internal/app/database"
 	healthCheck "github.com/worldkk1/employee-leave-go/internal/health-check"
 	"github.com/worldkk1/employee-leave-go/internal/user"
+	userLeave "github.com/worldkk1/employee-leave-go/internal/user-leave"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,7 @@ func main() {
 	apiRouter := router.Group("/")
 	healthCheck.SetupRouter(apiRouter)
 	user.SetupRouter(apiRouter)
+	userLeave.SetupRouter(apiRouter)
 
 	router.Run("localhost:8080")
 }

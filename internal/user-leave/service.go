@@ -1,13 +1,98 @@
 package userleave
 
 import (
+	"errors"
+	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jinzhu/now"
 	"github.com/worldkk1/employee-leave-go/internal/app/database"
 	"github.com/worldkk1/employee-leave-go/internal/app/models"
+	"gorm.io/gorm"
 )
+
+type RequestLeaveInput struct {
+	UserId        uuid.UUID `json:"userId" binding:"required"`
+	LeaveTypesId  uuid.UUID `json:"leaveTypesId" binding:"required"`
+	StartDate     string    `json:"startDate"`
+	EndDate       string    `json:"endDate" binding:"required"`
+	TotalLeaveDay int       `json:"totalLeaveDay" binding:"required"`
+	Reason        string    `json:"reason"`
+	AttachmentUrl string    `json:"attachmentUrl"`
+}
+
+type RequestLeaveResponse struct {
+	UserId    uuid.UUID `json:"userId"`
+	Remaining int       `json:"remaining"`
+	Used      int       `json:"used"`
+}
+
+func RequestLeave(c *gin.Context) {
+	var input RequestLeaveInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+		return
+	}
+	startDate, err := time.Parse("2006-01-02", input.StartDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+		return
+	}
+	endDate, err := time.Parse("2006-01-02", input.EndDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error})
+		return
+	}
+
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		queryUserLeaves := tx.Model(models.UserLeave{})
+		queryUserLeaves.Where("user_id = ?", input.UserId)
+		queryUserLeaves.Where("leave_types_id = ? and remaining >= ?", input.LeaveTypesId, input.TotalLeaveDay)
+		queryUserLeaves.Where("start_date <= ? and end_date >= ?", now, now)
+		updatedUserLeave := queryUserLeaves.Updates(map[string]interface{}{
+			"remaining": gorm.Expr("remaining - ?", input.TotalLeaveDay),
+			"used":      gorm.Expr("used + ?", input.TotalLeaveDay),
+		})
+		if updatedUserLeave.Error != nil || updatedUserLeave.RowsAffected == 0 {
+			return errors.New("cannot update user leave")
+		}
+
+		leave := models.UserLeaveRecord{
+			UserId:        input.UserId,
+			LeaveTypesId:  input.LeaveTypesId,
+			StartDate:     startDate,
+			EndDate:       endDate,
+			TotalLeaveDay: input.TotalLeaveDay,
+			Reason:        &input.Reason,
+			AttachmentURL: &input.AttachmentUrl,
+		}
+		err = tx.Create(&leave).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var userLeave models.UserLeave
+	if err := database.DB.Where("user_id = ?", input.UserId).First(&userLeave).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": RequestLeaveResponse{
+		UserId:    input.UserId,
+		Remaining: userLeave.Remaining,
+		Used:      userLeave.Used,
+	}})
+}
 
 func AllocateLeaves(userId uuid.UUID) {
 	startDate := now.BeginningOfYear()
